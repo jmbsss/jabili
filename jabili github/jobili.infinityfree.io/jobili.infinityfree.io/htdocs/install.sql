@@ -1,0 +1,98 @@
+
+CREATE TABLE IF NOT EXISTS users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  username VARCHAR(60) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  role ENUM('owner','cashier') NOT NULL DEFAULT 'cashier',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS categories (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(80) NOT NULL UNIQUE
+);
+CREATE TABLE IF NOT EXISTS products (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  sku VARCHAR(60) UNIQUE NULL,
+  name VARCHAR(150) NOT NULL,
+  category_id INT NULL,
+  price DECIMAL(12,2) NOT NULL DEFAULT 0,
+  cost DECIMAL(12,2) NOT NULL DEFAULT 0,
+  stock INT NOT NULL DEFAULT 0,
+  reorder_level INT NOT NULL DEFAULT 5,
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
+  INDEX(name), INDEX(active)
+);
+CREATE TABLE IF NOT EXISTS customers (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(150) NOT NULL,
+  phone VARCHAR(50) NULL,
+  address VARCHAR(255) NULL,
+  notes TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS sales (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  receipt_no VARCHAR(40) NOT NULL UNIQUE,
+  customer_id INT NULL,
+  user_id INT NULL,
+  subtotal DECIMAL(12,2) NOT NULL,
+  discount DECIMAL(12,2) NOT NULL DEFAULT 0,
+  total DECIMAL(12,2) NOT NULL,
+  amount_paid DECIMAL(12,2) NOT NULL DEFAULT 0,
+  change_due DECIMAL(12,2) NOT NULL DEFAULT 0,
+  payment_method ENUM('cash','utang','gcash','bank') NOT NULL DEFAULT 'cash',
+  status ENUM('paid','utang','void') NOT NULL DEFAULT 'paid',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX(created_at), INDEX(status)
+);
+CREATE TABLE IF NOT EXISTS sale_items (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  sale_id BIGINT NOT NULL,
+  product_id INT NULL,
+  product_name VARCHAR(150) NOT NULL,
+  quantity INT NOT NULL,
+  unit_price DECIMAL(12,2) NOT NULL,
+  unit_cost DECIMAL(12,2) NOT NULL DEFAULT 0,
+  line_total DECIMAL(12,2) NOT NULL,
+  FOREIGN KEY (sale_id) REFERENCES sales(id) ON DELETE CASCADE,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
+);
+CREATE TABLE IF NOT EXISTS inventory_logs (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  product_id INT NULL,
+  user_id INT NULL,
+  change_qty INT NOT NULL,
+  reason VARCHAR(180) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+CREATE TABLE IF NOT EXISTS expenses (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(150) NOT NULL,
+  category VARCHAR(80) NOT NULL DEFAULT 'General',
+  amount DECIMAL(12,2) NOT NULL,
+  notes TEXT NULL,
+  user_id INT NULL,
+  expense_date DATE NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX(expense_date)
+);
+CREATE TABLE IF NOT EXISTS debt_payments (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  sale_id BIGINT NOT NULL,
+  amount DECIMAL(12,2) NOT NULL,
+  user_id INT NULL,
+  notes VARCHAR(255) NULL,
+  paid_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (sale_id) REFERENCES sales(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+INSERT IGNORE INTO categories(name) VALUES ('General'), ('Beverages'), ('Snacks'), ('Household'), ('Personal Care');

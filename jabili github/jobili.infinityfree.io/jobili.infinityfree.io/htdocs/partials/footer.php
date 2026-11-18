@@ -1,0 +1,1 @@
+</section><footer class="footer">Jobili Store Management System <span>· PHP + MySQL</span></footer></main></div><script src="assets/app.js"></script></body></html>
